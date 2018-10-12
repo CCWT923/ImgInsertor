@@ -29,7 +29,7 @@ namespace ExcelImageInsert
         private string GetFolder()
         {
             FolderBrowserDialog dialog = new FolderBrowserDialog();
-            if(dialog.ShowDialog() == DialogResult.OK)
+            if (dialog.ShowDialog() == DialogResult.OK)
             {
                 return dialog.SelectedPath;
             }
@@ -48,7 +48,7 @@ namespace ExcelImageInsert
         {
             List<string> files = new List<string>();
             string[] filters;
-            if(filter.IndexOf(';') != -1)
+            if (filter.IndexOf(';') != -1)
             {
                 filters = filter.Split(';');
             }
@@ -59,11 +59,11 @@ namespace ExcelImageInsert
             }
 
             DirectoryInfo directoryInfo = new DirectoryInfo(folder);
-            foreach ( FileInfo file in directoryInfo.GetFiles())
+            foreach (FileInfo file in directoryInfo.GetFiles())
             {
-                for(int i = 0; i < filters.Length; i++)
+                for (int i = 0; i < filters.Length; i++)
                 {
-                    if(file.Extension == filters[i])
+                    if (file.Extension == filters[i])
                     {
                         files.Add(file.FullName);
 #if DEBUG
@@ -77,6 +77,39 @@ namespace ExcelImageInsert
             return files;
         }
 
+        const double COLUMN_WIDTH_RATIO = 7.0;
+        const double ROW_HEIGHT_RATIO = 1.33;
+
+        #region 将列表框中的内容取出到一个List中
+        /// <summary>
+        /// 获取列表框中的所有项目
+        /// </summary>
+        /// <returns></returns>
+        private List<string> GetImageFiles()
+        {
+            if (listBox1.Items.Count == 0) return null;
+
+            List<string> imgFiles = new List<string>();
+            for (int i = 0; i < listBox1.Items.Count; i++)
+            {
+                imgFiles.Add(listBox1.Items[i].ToString());
+            }
+            return imgFiles;
+        }
+        #endregion
+
+        #region 获取路径中的不带扩展名的文件名
+        /// <summary>
+        /// 从指定路径中返回不带扩展名的文件名
+        /// </summary>
+        /// <param name="path">要获取文件名的路径</param>
+        /// <returns></returns>
+        private string GetFileName(string path)
+        {
+            return Path.GetFileNameWithoutExtension(path);
+        }
+        #endregion
+
         #region 创建新的Excel文件
         /// <summary>
         /// 创建一个新的Excel文件
@@ -87,7 +120,7 @@ namespace ExcelImageInsert
             string excelFileName = "";
             SaveFileDialog saveFileDialog = new SaveFileDialog();
             saveFileDialog.Filter = "Excel文件|*.xlsx";
-            if(saveFileDialog.ShowDialog() == DialogResult.OK)
+            if (saveFileDialog.ShowDialog() == DialogResult.OK)
             {
                 excelFileName = saveFileDialog.FileName;
             }
@@ -96,18 +129,13 @@ namespace ExcelImageInsert
                 return;
             }
 
-            //列表框内的所有图片路径取出
-            List<string> imgFiles = new List<string>();
-            for(int i = 0; i < listBox1.Items.Count;i++)
-            {
-                imgFiles.Add(listBox1.Items[i].ToString());
-            }
-
+            //获取图片路径
+            List<string> imgFiles = GetImageFiles();
 
             //Excel部分
 
-            int rowHeigth = 94;
-            int columnWidth = 22;
+            double rowHeigth = 94.0;
+            double columnWidth = 22.0;
 
             FileInfo excelFile = new FileInfo(excelFileName);
             ExcelPackage excel = new ExcelPackage(excelFile);
@@ -115,51 +143,34 @@ namespace ExcelImageInsert
             ExcelPicture excelPicture = null;
             ExcelRow excelRow;
             ExcelColumn excelColumn;
-            int row = 2;
-            int column = 2;
+            int row = 1;
+            int imgColumn = int.Parse(TextBox_ImgColumn.Text);
+            int filenameColumn = int.Parse(TextBox_ImgNameColumn.Text);
             string name;
-            string extension;
-            int counter = 0;
             string tempImgFile = "";
 
-            worksheet.Cells[1, 1].Value = "名称";
-            worksheet.Cells[1, 2].Value = "图片";
             //将路径中的文件名取出，不带扩展名
             foreach (string s in imgFiles)
             {
-                name = Path.GetFileNameWithoutExtension(s);
-                //获取文件扩展名
-                extension = Path.GetExtension(s).Remove(0, 1);
-                //文件名
-                worksheet.Cells[row, 1].Value = name;
-                worksheet.Cells[row, 1].Style.Border.BorderAround(OfficeOpenXml.Style.ExcelBorderStyle.Thin, Color.Black);
+                name = GetFileName(s);
+                if (TextBox_ImgNameColumn.Text != "" || TextBox_ImgNameColumn.Text != "0")
+                {
+                    //文件名填入第一列
+                    worksheet.Cells[row, int.Parse(TextBox_ImgNameColumn.Text)].Value = name;
+                    worksheet.Cells[row, int.Parse(TextBox_ImgNameColumn.Text)].Style.Border.BorderAround(OfficeOpenXml.Style.ExcelBorderStyle.Thin, Color.Black);
+                }
+
                 excelRow = worksheet.Row(row);
-                excelColumn = worksheet.Column(column);
+                excelColumn = worksheet.Column(imgColumn);
                 excelRow.Height = rowHeigth;
                 excelColumn.Width = columnWidth;
 
-                //复制文件到临时目录
-                try
-                {
-                    //找一个合适的文件名
-                    while (File.Exists(TempPath + "\\" + counter.ToString() + "." + extension))
-                    {
-                        counter++;
-                    }
-
-                    tempImgFile = TempPath + "\\" + counter.ToString() + "." + extension;
-                    //将文件复制到临时文件夹中
-                    File.Copy(s, tempImgFile);
-                }
-                catch (Exception ex)
-                {
-                    throw ex;
-                }
+                tempImgFile = GetTempFileName(s);
 
                 excelPicture = worksheet.Drawings.AddPicture(name, new FileInfo(tempImgFile));
                 //调整图片的位置到单元格内
-                excelPicture.SetPosition(row - 1, 0, column - 1, 0);
-                excelPicture.SetSize((int)(excelColumn.Width * 7),(int)(rowHeigth * 1.33));
+                excelPicture.SetPosition(row - 1, 0, imgColumn - 1, 0);
+                excelPicture.SetSize((int)(excelColumn.Width * COLUMN_WIDTH_RATIO), (int)(rowHeigth * ROW_HEIGHT_RATIO));
                 row++;
                 //删除临时文件
                 File.Delete(tempImgFile);
@@ -180,8 +191,100 @@ namespace ExcelImageInsert
 
         #endregion
 
+        #region 复制文件到临时目录
+        /// <summary>
+        /// 复制一个指定的文件到临时文件夹，并返回该临时文件的路径
+        /// </summary>
+        /// <param name="file"></param>
+        /// <returns></returns>
+        private string GetTempFileName(string file)
+        {
+            string tempImgFile;
+            int counter = 0;
+            try
+            {
+                //找一个合适的文件名
+                while (File.Exists(TempPath + "\\" + counter.ToString() + Path.GetExtension(file)))
+                {
+                    counter++;
+                }
+
+                tempImgFile = TempPath + "\\" + counter.ToString() + Path.GetExtension(file);
+                //将文件复制到临时文件夹中
+                File.Copy(file, tempImgFile);
+                return tempImgFile;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+        #endregion
+
+        #region 插入到已有的Excel文件
+        private void UseExistsExcelFile()
+        {
+            using (ExcelPackage excel = new ExcelPackage(new FileInfo(TextBox_ExcelFile.Text)))
+            {
+                //获取第一个工作表
+                ExcelWorksheet worksheet = excel.Workbook.Worksheets[1];
+                int row = 0;
+
+                while (worksheet.Cells[++row, 1].Value != null) ;
+                double imgColumnWidth = worksheet.Column(int.Parse(TextBox_ImgColumn.Text)).Width; //图片所在列的宽度
+                double imgRowHeight = worksheet.Row(row - 1).Height; //图片所在行的高度
+                int imgNameColumn = 0;
+                int imgColumn = int.Parse(TextBox_ImgColumn.Text);
+                string imgName = "";
+                string tempImgFile = "";
+
+                //调整列宽
+                worksheet.Column(imgColumn).Width = imgColumnWidth;
+
+                //读取图片
+                var imgFiles = GetImageFiles();
+                foreach (var f in imgFiles)
+                {
+                    worksheet.Row(row).Height = imgRowHeight; //调整行高
+                    if (TextBox_ImgNameColumn.Text != "" && TextBox_ImgNameColumn.Text != "0")
+                    {
+                        imgNameColumn = int.Parse(TextBox_ImgNameColumn.Text);
+                        //插入文件名
+                        imgName = GetFileName(f);
+                        worksheet.Cells[row, imgNameColumn].Value = imgName;
+                        //调整列宽
+                        worksheet.Column(imgNameColumn).AutoFit();
+                    }
+                    //插入图片
+                    tempImgFile = GetTempFileName(f);
+                    //TODO:如果文件名已存在，可能导致异常
+                    try
+                    {
+                        ExcelPicture picture = worksheet.Drawings.AddPicture(imgName, new FileInfo(tempImgFile));
+                        picture.SetPosition(row - 1, 0, imgColumn - 1, 0);
+                        picture.SetSize((int)(imgColumnWidth * COLUMN_WIDTH_RATIO), (int)(worksheet.Row(row).Height * ROW_HEIGHT_RATIO));
+                    }
+                    catch(Exception)
+                    {
+                        continue;
+                    }
+                    
+                    ++row;
+                    File.Delete(tempImgFile);
+                }
+                
+                //保存文件
+                excel.Save();
+
+                MessageBox.Show("保存成功！", "", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+
+        }
+        #endregion
+
         private void Form1_Load(object sender, EventArgs e)
         {
+            Btn_BrowseExcelFile.Enabled = false;
         }
 
         private void Btn_Close_Click(object sender, EventArgs e)
@@ -198,9 +301,9 @@ namespace ExcelImageInsert
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void TxtBox_ImgColIndex_KeyPress(object sender, KeyPressEventArgs e)
+        private void AllowNumbersInput(object sender, KeyPressEventArgs e)
         {
-            if(e.KeyChar != 8 && !Char.IsDigit(e.KeyChar))
+            if (e.KeyChar != 8 && !Char.IsDigit(e.KeyChar))
             {
                 e.Handled = true;
             }
@@ -216,41 +319,35 @@ namespace ExcelImageInsert
             OpenFileDialog openFileDialog = new OpenFileDialog();
             openFileDialog.Filter = "图片文件|*.jpg;*.bmp;*.gif;*.png";
             openFileDialog.Multiselect = true;
-            if(openFileDialog.ShowDialog() == DialogResult.OK)
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
-                foreach(string x in openFileDialog.FileNames)
+                foreach (string x in openFileDialog.FileNames)
                 {
                     listBox1.Items.Add(x);
                 }
             }
         }
 
-        private void Rad_AddToExistsFile_CheckedChanged(object sender, EventArgs e)
-        {
-            if(Rad_AddToExistsFile.Checked)
-            {
-                OpenFileDialog openFileDialog = new OpenFileDialog();
-                openFileDialog.Filter = "Excel文件|*.xlsx";
-                if(openFileDialog.ShowDialog() == DialogResult.OK)
-                {
-                    TextBox_ExcelFile.Text = openFileDialog.FileName;
-                }
-            }
-        }
 
         private void Btn_Execution_Click(object sender, EventArgs e)
         {
-            if(listBox1.Items.Count == 0)
+            if (listBox1.Items.Count == 0)
             {
                 return;
             }
-            if(Rad_NewFile.Checked)
+
+            if (TextBox_ImgColumn.Text == "" || int.Parse(TextBox_ImgColumn.Text) == 0 )
+            {
+                return;
+            }
+
+            if (Rad_NewFile.Checked)
             {
                 CreateNewFile();
             }
-            else if(Rad_AddToExistsFile.Checked)
+            else if (Rad_AddToExistsFile.Checked)
             {
-
+                UseExistsExcelFile();
             }
         }
         /// <summary>
@@ -261,7 +358,7 @@ namespace ExcelImageInsert
         private bool IsPicture(string path)
         {
             string ext = Path.GetExtension(path).ToUpper();
-            if(ext.Contains("PNG") || ext.Contains("GIF") || ext.Contains("JPG") || ext.Contains("BMP"))
+            if (ext.Contains("PNG") || ext.Contains("GIF") || ext.Contains("JPG") || ext.Contains("BMP"))
             {
                 return true;
             }
@@ -273,12 +370,12 @@ namespace ExcelImageInsert
         {
             FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
             folderBrowserDialog.ShowNewFolderButton = false;
-            if(folderBrowserDialog.ShowDialog() == DialogResult.OK)
+            if (folderBrowserDialog.ShowDialog() == DialogResult.OK)
             {
                 DirectoryInfo directory = new DirectoryInfo(folderBrowserDialog.SelectedPath);
-                foreach(FileInfo fileInfo in directory.GetFiles())
+                foreach (FileInfo fileInfo in directory.GetFiles())
                 {
-                    if(IsPicture(fileInfo.FullName))
+                    if (IsPicture(fileInfo.FullName))
                     {
                         listBox1.Items.Add(fileInfo.FullName);
                     }
@@ -288,7 +385,7 @@ namespace ExcelImageInsert
         #region 移除项目和清空列表
         private void MenuItem_Remove_Click(object sender, EventArgs e)
         {
-            if(listBox1.SelectedItems.Count == 0)
+            if (listBox1.SelectedItems.Count == 0)
             {
                 return;
             }
@@ -301,5 +398,60 @@ namespace ExcelImageInsert
         }
         #endregion
 
+        #region 切换设置窗口的可见性
+        bool OptionWindowVisible = true;
+
+        private void Btn_SwitchOptionWindow_Click(object sender, EventArgs e)
+        {
+            if (OptionWindowVisible)
+            {
+                this.Height = this.Height - Grp_Settings.Height;
+                listBox1.Top -= Grp_Settings.Height;
+                Btn_Execution.Top -= Grp_Settings.Height;
+                Btn_AddFolder.Top -= Grp_Settings.Height;
+                Btn_AddImgFile.Top -= Grp_Settings.Height;
+                Grp_Settings.Visible = false;
+                OptionWindowVisible = false;
+                Lnk_SwitchSettingWindow.Text = "显示设置";
+            }
+            else
+            {
+                Grp_Settings.Visible = true;
+                this.Height = this.Height + Grp_Settings.Height;
+                listBox1.Top += Grp_Settings.Height;
+                Btn_Execution.Top += Grp_Settings.Height;
+                Btn_AddFolder.Top += Grp_Settings.Height;
+                Btn_AddImgFile.Top += Grp_Settings.Height;
+                OptionWindowVisible = true;
+                Lnk_SwitchSettingWindow.Text = "隐藏设置";
+            }
+        }
+        #endregion
+
+        private void Btn_BrowseExcelFile_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = "Excel文件|*.xlsx";
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                TextBox_ExcelFile.Text = openFileDialog.FileName;
+            }
+        }
+
+        private void Rad_AddToExistsFile_CheckedChanged(object sender, EventArgs e)
+        {
+            if(Rad_AddToExistsFile.Checked)
+            {
+                TextBox_ImgColumn.Text = "";
+                TextBox_ImgNameColumn.Text = "";
+                Btn_BrowseExcelFile.Enabled = true;
+            }
+            else
+            {
+                Btn_BrowseExcelFile.Enabled = false;
+            }
+        }
+
+      
     }
 }
