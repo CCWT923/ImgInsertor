@@ -273,6 +273,7 @@
             // TextBox_ImgNameColumn
             // 
             this.TextBox_ImgNameColumn.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.TextBox_ImgNameColumn.Font = new System.Drawing.Font("宋体", 9F);
             this.TextBox_ImgNameColumn.Location = new System.Drawing.Point(172, 22);
             this.TextBox_ImgNameColumn.MaxLength = 4;
             this.TextBox_ImgNameColumn.Name = "TextBox_ImgNameColumn";

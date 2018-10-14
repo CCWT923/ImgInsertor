@@ -226,6 +226,10 @@ namespace ExcelImageInsert
         {
             using (ExcelPackage excel = new ExcelPackage(new FileInfo(TextBox_ExcelFile.Text)))
             {
+                int successCount = 0;
+                int failCount = 0;
+                string errMsg = "";
+
                 //获取第一个工作表
                 ExcelWorksheet worksheet = excel.Workbook.Worksheets[1];
                 int row = 0;
@@ -252,20 +256,25 @@ namespace ExcelImageInsert
                         //插入文件名
                         imgName = GetFileName(f);
                         worksheet.Cells[row, imgNameColumn].Value = imgName;
+                        worksheet.Cells[row, imgNameColumn].Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                        worksheet.Cells[row, imgNameColumn].Style.HorizontalAlignment = OfficeOpenXml.Style.ExcelHorizontalAlignment.Center;
                         //调整列宽
                         worksheet.Column(imgNameColumn).AutoFit();
                     }
                     //插入图片
                     tempImgFile = GetTempFileName(f);
-                    //TODO:如果文件名已存在，可能导致异常
+                    
                     try
                     {
                         ExcelPicture picture = worksheet.Drawings.AddPicture(imgName, new FileInfo(tempImgFile));
                         picture.SetPosition(row - 1, 0, imgColumn - 1, 0);
                         picture.SetSize((int)(imgColumnWidth * COLUMN_WIDTH_RATIO), (int)(worksheet.Row(row).Height * ROW_HEIGHT_RATIO));
+                        successCount++;
                     }
-                    catch(Exception)
+                    catch(Exception ex)
                     {
+                        failCount++;
+                        errMsg += ex.Message + "\n";
                         continue;
                     }
                     
@@ -276,7 +285,15 @@ namespace ExcelImageInsert
                 //保存文件
                 excel.Save();
 
-                MessageBox.Show("保存成功！", "", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                if(failCount > 0)
+                {
+                    MessageBox.Show(string.Format("操作已完成。成功 {0} 个，失败 {1} 个。\n{2}", successCount.ToString(), failCount.ToString(),errMsg), "文件已保存", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else
+                {
+                    MessageBox.Show(string.Format("操作已完成。成功 {0} 个，失败 {1} 个。", successCount.ToString(), failCount.ToString()), "文件已保存", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
             }
 
         }
