@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27703.2035
+VisualStudioVersion = 15.0.27130.2036
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExcelImageInsert", "ExcelImageInsert\ExcelImageInsert.csproj", "{CFB39F3D-88D0-4F95-8480-BB688E247B8C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTestProject1", "UnitTestProject1\UnitTestProject1.csproj", "{EDE94815-EDC8-4701-A565-EA1F1D2700E9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{CFB39F3D-88D0-4F95-8480-BB688E247B8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CFB39F3D-88D0-4F95-8480-BB688E247B8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CFB39F3D-88D0-4F95-8480-BB688E247B8C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EDE94815-EDC8-4701-A565-EA1F1D2700E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EDE94815-EDC8-4701-A565-EA1F1D2700E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EDE94815-EDC8-4701-A565-EA1F1D2700E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EDE94815-EDC8-4701-A565-EA1F1D2700E9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

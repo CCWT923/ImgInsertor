@@ -230,19 +230,19 @@ namespace ExcelImageInsert
                 int failCount = 0;
                 string errMsg = "";
 
-                //获取第一个工作表
+                //第一个工作表
                 ExcelWorksheet worksheet = excel.Workbook.Worksheets[1];
                 int row = 0;
 
                 while (worksheet.Cells[++row, 1].Value != null) ;
-                double imgColumnWidth = worksheet.Column(int.Parse(TextBox_ImgColumn.Text)).Width; //图片所在列的宽度
-                double imgRowHeight = worksheet.Row(row - 1).Height; //图片所在行的高度
+                double imgColumnWidth = worksheet.Column(int.Parse(TextBox_ImgColumn.Text)).Width; 
+                double imgRowHeight = worksheet.Row(row - 1).Height; 
                 int imgNameColumn = 0;
                 int imgColumn = int.Parse(TextBox_ImgColumn.Text);
                 string imgName = "";
                 string tempImgFile = "";
 
-                //调整列宽
+                //列宽
                 worksheet.Column(imgColumn).Width = imgColumnWidth;
 
                 //读取图片
